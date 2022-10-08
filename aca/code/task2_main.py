@@ -11,7 +11,13 @@ import lsi_author
 #import lsi_model_2
 import numpy as np
 import math
+import argparse
 #import interest_press_kl
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--method', type=str, default='aca', help='used method')
+args = parser.parse_args()
+
 
 def split_dataset(author_list):
     print("split dataset ...")
@@ -185,7 +191,9 @@ def combine_result_file(flag):
     return p_author_interest
 
 def print_test_result(predict_author_interest):
-    fid_result = codecs.open("./task2_out/10_08_4_2.0.txt","w","utf-8")
+    out_dir = "out/"
+    os.makedirs(out_dir, exist_ok=True)
+    fid_result = codecs.open("./out/author_interest_aca.txt","w","utf-8")
     fid_result.write("<task2>"+'\n')
     fid_result.write("authorname\tinterest1\tinterest2\tinterest3\tinterest4\tinterest5"+'\n')
     with codecs.open("./raw_data/task2_test_final.txt","r","utf-8") as fid:
@@ -316,8 +324,10 @@ def single_test(model="lsi"):
             interest_s[k] += v
         interest_s = sorted(interest_s.items(),key=lambda x:x[1],reverse=True)
         author_interest_score[author] = interest_s[:5]
-    
-    with open("task2_out/author_interest_{}_only.json".format(model),"w") as wf:
+
+    out_dir = "out/"
+    os.makedirs(out_dir, exist_ok=True)
+    with open("./out/author_interest_lsa.txt".format(model),"w") as wf:
         wf.write("<task2>\n")
         wf.write("authorname	interest1	interest2	interest3	interest4	interest5\n")
         for author,interest in author_interest_score.items():
@@ -335,15 +345,19 @@ if __name__ == "__main__":
 
     flag = 'test'
 
-    single_test(model="sbert")
-    raise
-    if flag == 'vali':
-        # task2_main(flag)
-        p_author_interest = combine_result_file(flag)
-        print_validation_result(p_author_interest,author_interest)
-    if flag == 'test':
-        task2_main(flag)
-        p_author_interest = combine_result_file(flag)
-        print_test_result(p_author_interest)
+    if args.method == "lsi":
+        single_test(model="lsi")
+    # raise
+    elif args.method == "aca":
+        if flag == 'vali':
+            # task2_main(flag)
+            p_author_interest = combine_result_file(flag)
+            print_validation_result(p_author_interest,author_interest)
+        if flag == 'test':
+            task2_main(flag)
+            p_author_interest = combine_result_file(flag)
+            print_test_result(p_author_interest)
+    else:
+        raise NotImplementedError
 
     #single_test()

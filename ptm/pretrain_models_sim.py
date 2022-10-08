@@ -11,10 +11,6 @@ import numpy as np
 import torch
 from sentence_transformers import SentenceTransformer
 
-from contextualized_topic_models.models.ctm import CTM, ZeroShotTM, CombinedTM
-from contextualized_topic_models.utils.data_preparation import TopicModelDataPreparation
-from contextualized_topic_models.utils.preprocessing import WhiteSpacePreprocessingStopwords
-
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print("device:", device)
 # nltk.download('stopwords')
@@ -31,29 +27,7 @@ def get_bert_emb(model_type="sbert", role="train"):
         a_p = json.load(f)
     print("load data done")
     
-    if model_type == "ctm":
-        documents = []
-        for author, paper in tqdm(a_p.items()):
-            if isinstance(paper, list):
-                paper = " ".join(paper)
-            documents.append(paper.strip())
-
-        stopwords = list(stop_words.words("english"))
-        sp = WhiteSpacePreprocessingStopwords(documents, stopwords_list=stopwords)
-        preprocessed_documents, unpreprocessed_corpus, vocab, retained_indices = sp.preprocess()
-
-        tp = TopicModelDataPreparation("all-mpnet-base-v2")
-
-        training_dataset = tp.fit(text_for_contextual=unpreprocessed_corpus, text_for_bow=preprocessed_documents)
-        # ctm = CombinedTM(bow_size=len(tp.vocab), contextual_size=768, n_components=20, num_epochs=10)
-        # ctm.load("out/", epoch=9)
-        ctm = joblib.load("out/ctm.pkl")
-        doc_embs = ctm.get_doc_topic_distribution(training_dataset)
-        for i, author in enumerate(tqdm(a_p.keys())):
-            out_dir = "out/{}/{}/".format(model_type, role)
-            os.makedirs(out_dir, exist_ok=True)
-            torch.save(doc_embs[i], out_dir + author + ".pt")
-    elif model_type == "lda":
+    if model_type == "lda":
         out_dir = "out/lda/"
         lda = LdaModel.load(out_dir + "lda.model")
         common_dictionary = joblib.load(out_dir + "common_dictionary.pkl")
@@ -71,7 +45,7 @@ def get_bert_emb(model_type="sbert", role="train"):
             os.makedirs(out_dir, exist_ok=True)
             assert len(cur_vec) == 100
             torch.save(cur_vec, out_dir + author + ".pt")
-    else:
+    elif model_type == "sbert":
         for author, paper in tqdm(a_p.items()):
             if isinstance(paper, list):
                 paper = " ".join(paper)
@@ -93,6 +67,8 @@ def get_bert_emb(model_type="sbert", role="train"):
             out_dir = "out/{}/{}/".format(model_type, role)
             os.makedirs(out_dir, exist_ok=True)
             torch.save(paper_embed_1, out_dir + author + ".pt")
+    else:
+        raise NotImplementedError
 
 
 def mv_author_files(role="train", model_type="sbert"):
@@ -163,7 +139,7 @@ def run_testdata_train_data(model="sbert"):
     train_authors = [pt[:-3] for pt in pts_train]
     out_dir = "out/"
     os.makedirs(out_dir, exist_ok=True)
-    wf_name = "task2_{}_sim.txt".format(model)
+    wf_name = "author_interest_{}.txt".format(model)
     wf = open(os.path.join(out_dir, wf_name), "w")
     wf.write("<task2>\n")
     wf.write("authorname	interest1	interest2	interest3	interest4	interest5\n")
@@ -178,58 +154,8 @@ def run_testdata_train_data(model="sbert"):
     wf.close()
 
 
-def finetune_without_labels():
-    # with open("contextualized_topic_models/data/train_papers.txt",'r',encoding="utf-8") as filino:
-    #     data = filino.readlines()
-    text_file = "raw_data/train_papers.txt"
-
-    # nltk.download('stopwords')
-
-    documents = [line.strip() for line in open(text_file, encoding="utf-8").readlines()]
-
-    stopwords = list(stop_words.words("english"))
-
-    sp = WhiteSpacePreprocessingStopwords(documents, stopwords_list=stopwords)
-    preprocessed_documents, unpreprocessed_corpus, vocab, retained_indices = sp.preprocess()
-
-    tp = TopicModelDataPreparation("all-mpnet-base-v2")
-
-    training_dataset = tp.fit(text_for_contextual=unpreprocessed_corpus, text_for_bow=preprocessed_documents)
-
-    ctm = CombinedTM(bow_size=len(tp.vocab), contextual_size=768, n_components=20, num_epochs=10)
-    ctm.fit(training_dataset) # run the model
-
-    # out_dir = os.makedirs("out/", exist_ok=True)
-    # ctm.save(models_dir="out/")
-    # del ctm
-
-    # print(len(tp.vocab))
-    # ctm = CombinedTM(bow_size=len(tp.vocab), contextual_size=768, n_components=20, num_epochs=10)
-    # ctm.load("out/", epoch=9)
-
-    joblib.dump(ctm, "out/ctm.pkl")
-
-    del ctm
-    ctm = joblib.load("out/ctm.pkl")
-    r = ctm.get_doc_topic_distribution(training_dataset)
-    print(r.shape)
-
-
 if __name__ == "__main__":
     os.environ["TOKENIZERS_PARALLELISM"]="true"
     get_bert_emb(model_type="sbert", role="train")
-    # get_bert_emb(model_type="sbert", role="test")
-    # mv_author_files(role="train", model_type="sbert")
-    # train_vail_similary_matrix=cauculate_similary_matrix(datatype1="test",datatype2="train")
-    # print(train_vail_similary_matrix.shape)
-    # run_testdata_train_data(model="sbert")
-    # finetune_without_labels()
-    # get_bert_emb(model_type="ctm", role="train")
-    # get_bert_emb(model_type="ctm", role="test")
-    # run_testdata_train_data(model="ctm")
-    # get_bert_emb(model_type="sbert-ft", role="train")
-    # get_bert_emb(model_type="sbert-ft", role="test")
-    # run_testdata_train_data(model="sbert-ft")
-    # get_bert_emb(model_type="lda", role="train")
-    # get_bert_emb(model_type="lda", role="test")
-    run_testdata_train_data(model="lda")
+    get_bert_emb(model_type="sbert", role="test")
+    run_testdata_train_data(model="sbert")

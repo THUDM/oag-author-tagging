@@ -1,6 +1,11 @@
 from operator import truth
 import pandas as pd
 import numpy as np
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--method', type=str, default='aca', help='used method')
+args = parser.parse_args()
 
 
 def read_smpcup2017(path):
@@ -214,7 +219,10 @@ def eval_task2_only(pred_file):
 
 
 if __name__ == "__main__":
-    # eval_task2_only("out/task2_sbert_sim.txt")
+    if args.method not in ["sbert", "lsi", "aca"]:
+        raise NotImplementedError
+
+    eval_task2_only("./out/author_interest_{}.txt".format(args.method))
     # eval_task2_only("out/task2_ctm_sim.txt")
     # eval_task2_only("out/task2_sbert-ft_sim.txt")
-    eval_task2_only("out/task2_lda_sim.txt")
+    # eval_task2_only("out/task2_lda_sim.txt")
