@@ -214,4 +214,7 @@ def eval_task2_only(pred_file):
 
 
 if __name__ == "__main__":
-    eval_task2_only("out/task2_sbert_sim.txt")
+    # eval_task2_only("out/task2_sbert_sim.txt")
+    # eval_task2_only("out/task2_ctm_sim.txt")
+    # eval_task2_only("out/task2_sbert-ft_sim.txt")
+    eval_task2_only("out/task2_lda_sim.txt")
