@@ -39,6 +39,20 @@ python aca/code/create_citenet.py
 python aca/code/expand_paper.py
 python aca/code/expand_author_press.py
 
+# LSI model
+python aca/code/task2_main.py --method lsi
+
+# aca method
+python aca/code/task2_main.py --method aca
+
+# sentence-bert
+python ptm/pretrain_models_sim.py
+
+# evaluation
+python evaluate.py --method lsi
+python evaluate.py --method aca
+python evaluate.py --method sbert
+
 ```
 
 Note that part of the code is adapted from https://github.com/geekinglcq/aca (top solutions from https://www.biendata.xyz/competition/scholar/)
