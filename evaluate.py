@@ -211,8 +211,8 @@ def ma_task_1(lst, truth_lst):
 def eval_task2_only(pred_file):
     preds = read_smpcup2017(pred_file)
     truths = read_smpcup2017("raw_data/scholar_final.txt")
-    # print(preds[1])
-    # print(truths[1])
+    # print(preds)
+    # print(truths)
     score = task1_2(preds[1], truths[1], max_length=3, separator='\t')
     print(score)
     return score

@@ -327,7 +327,7 @@ def single_test(model="lsi"):
 
     out_dir = "out/"
     os.makedirs(out_dir, exist_ok=True)
-    with open("./out/author_interest_lsa.txt".format(model),"w") as wf:
+    with open("./out/author_interest_lsi.txt".format(model),"w") as wf:
         wf.write("<task2>\n")
         wf.write("authorname	interest1	interest2	interest3	interest4	interest5\n")
         for author,interest in author_interest_score.items():
