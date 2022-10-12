@@ -55,4 +55,11 @@ python evaluate.py --method sbert
 
 ```
 
+## Results
+|       | Hit@3 |
+|-------|-------|
+| LSI   | 24.37 |
+| SBERT | 15.97 |
+| ACA   | 30.32 |
+
 Note that part of the code is adapted from https://github.com/geekinglcq/aca (top solutions from https://www.biendata.xyz/competition/scholar/)
