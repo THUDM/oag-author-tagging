@@ -219,7 +219,19 @@ def eval_task2_only(pred_file):
 
 
 if __name__ == "__main__":
-    if args.method not in ["sbert", "lsi", "aca"]:
+    if args.method not in [ "lsi",
+                            "aca",
+                            "sbert", 
+                            "simcse-roberta", 
+                            "e5-large", 
+                            "bert", 
+                            "deberta-base", 
+                            "deberta-v3-large",
+                            "gte-large",
+                            "bge-large",
+                            "e5-large-v2",
+                            "sentence-t5-xxl",
+                            "simcse-bert"]:
         raise NotImplementedError
 
     eval_task2_only("./out/author_interest_{}.txt".format(args.method))

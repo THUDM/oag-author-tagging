@@ -5,17 +5,41 @@ from tqdm import tqdm
 import joblib
 import nltk
 from nltk.corpus import stopwords as stop_words
-from gensim .models import LdaModel
+from gensim.models import LdaModel
 from gensim.corpora.dictionary import Dictionary
 import numpy as np
 import torch
 from sentence_transformers import SentenceTransformer
+import random
+import asyncio
+import argparse
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+parser = argparse.ArgumentParser()
+parser.add_argument('--method', type=str, default='sbert', help='used method')
+args = parser.parse_args()
+
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 print("device:", device)
 # nltk.download('stopwords')
 
+# 设置种子
+def set_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)#让显卡产生的随机数一致
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)#numpy产生的随机数一致
+    random.seed(seed)
+    # CUDA中的一些运算，如对sparse的CUDA张量与dense的CUDA张量调用torch.bmm()，它通常使用不确定性算法。
+    # 为了避免这种情况，就要将这个flag设置为True，让它使用确定的实现。
+    torch.backends.cudnn.deterministic = True
+    # 设置这个flag可以让内置的cuDNN的auto-tuner自动寻找最适合当前配置的高效算法，来达到优化运行效率的问题。
+    # 但是由于噪声和不同的硬件条件，即使是同一台机器，benchmark都可能会选择不同的算法。为了消除这个随机性，设置为 False
+    torch.backends.cudnn.benchmark = False
 
+set_seed(25)
+
+async def torch_save(content, path):
+    torch.save(content, path)
 def get_bert_emb(model_type="sbert", role="train"):
     if role == "train":
         file = "raw_data/t_author_paper.json"
@@ -45,28 +69,52 @@ def get_bert_emb(model_type="sbert", role="train"):
             os.makedirs(out_dir, exist_ok=True)
             assert len(cur_vec) == 100
             torch.save(cur_vec, out_dir + author + ".pt")
-    elif model_type == "sbert":
+    elif model_type in ["sbert", 
+                        "simcse-roberta", 
+                        "e5-large", 
+                        "bert", 
+                        "deberta-base", 
+                        "deberta-v3-large",
+                        "gte-large",
+                        "bge-large",
+                        "e5-large-v2",
+                        "sentence-t5-xxl",
+                        "simcse-bert"]:
+        if model_type == "sbert":
+            model = SentenceTransformer("all-MiniLM-L6-v2").to(device)
+        elif model_type == "simcse-roberta":
+            model = SentenceTransformer("gaotianyu1350/sup-simcse-roberta-large ").to(device)
+        elif model_type == "e5-large":
+            model = SentenceTransformer("intfloat/e5-large").to(device)
+        elif model_type == "bert":
+            model = SentenceTransformer("bert-base-uncased").to(device)
+        elif model_type == "deberta-base":
+            model = SentenceTransformer("microsoft/deberta-base").to(device)
+        elif model_type == "deberta-v3-large":
+            model = SentenceTransformer("microsoft/deberta-v3-large").to(device)
+        elif model_type == "gte-large":
+            model = SentenceTransformer("thenlper/gte-large").to(device)
+        elif model_type == "bge-large":
+            model = SentenceTransformer("BAAI/bge-large-en").to(device)
+        elif model_type == "e5-large-v2":
+            model = SentenceTransformer("intfloat/e5-large-v2").to(device)
+        elif model_type == "sentence-t5-xxl":
+            model = SentenceTransformer("sentence-transformers/sentence-t5-xxl").to(device)
+        elif model_type == "simcse-bert":
+            model = SentenceTransformer("gaotianyu1350/sup-simcse-bert-base-uncased").to(device)
+        else:
+            raise NotImplementedError
+        
         for author, paper in tqdm(a_p.items()):
+            
             if isinstance(paper, list):
                 paper = " ".join(paper)
-
-            if model_type == "sbert":
-                model = SentenceTransformer("all-MiniLM-L6-v2").to(device)
-                paper_embed_1 = model.encode(paper, convert_to_tensor=True).to(device)
-                paper_embed_1 =torch.nn.functional.normalize(paper_embed_1, p=2, dim=0)
-            elif model_type == "sbert-ft":
-                model = SentenceTransformer("all-MiniLM-L6-v2").to(device)
-                model.load("out/sbert-ft/")
-                paper_embed_1 = model.encode(paper, convert_to_tensor=True).to(device)
-                paper_embed_1 =torch.nn.functional.normalize(paper_embed_1, p=2, dim=0)
-            else:
-                raise NotImplementedError
-            
-            # print(paper_embed_1.shape)
-            
+                        
+            paper_embed_1 = model.encode(paper, convert_to_tensor=True).to(device)
+            paper_embed_1 =torch.nn.functional.normalize(paper_embed_1, p=2, dim=0)
             out_dir = "out/{}/{}/".format(model_type, role)
             os.makedirs(out_dir, exist_ok=True)
-            torch.save(paper_embed_1, out_dir + author + ".pt")
+            asyncio.run(torch_save(paper_embed_1, out_dir + author + ".pt"))
     else:
         raise NotImplementedError
 
@@ -96,15 +144,16 @@ def cauculate_matrix(role="train", model_type="sbert"):
     matrix=[]
     for i in  pts:
         i="out/{}/{}/".format(model_type, role)+i
-        if model_type == "sbert" or model_type == "sbert-ft":
-            matrix.append(torch.load(i).cpu().numpy())
-        elif model_type == "ctm" or model_type == "lda":
+        if model_type == "ctm" or model_type == "lda":
             matrix.append(torch.load(i))
         else:
-            raise NotImplementedError
+            matrix.append(torch.load(i).cpu().numpy())
+        # else:
+        #     raise NotImplementedError
     matrix=np.array(matrix) 
     print(matrix.shape)
     matrix=matrix.reshape(matrix.shape[0],matrix.shape[1])
+    print(matrix.shape)
     return  matrix
 
 
@@ -156,6 +205,19 @@ def run_testdata_train_data(model="sbert"):
 
 if __name__ == "__main__":
     os.environ["TOKENIZERS_PARALLELISM"]="true"
-    get_bert_emb(model_type="sbert", role="train")
-    get_bert_emb(model_type="sbert", role="test")
-    run_testdata_train_data(model="sbert")
+    if args.method not in ["sbert", 
+                            "simcse-roberta", 
+                            "e5-large", 
+                            "bert", 
+                            "deberta-base", 
+                            "deberta-v3-large",
+                            "gte-large",
+                            "bge-large",
+                            "e5-large-v2",
+                            "sentence-t5-xxl",
+                            "simcse-bert"]:
+        raise NotImplementedError
+
+    get_bert_emb(model_type=args.method, role="train")
+    get_bert_emb(model_type=args.method, role="test")
+    run_testdata_train_data(model=args.method)
