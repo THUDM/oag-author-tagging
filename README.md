@@ -48,7 +48,7 @@ python aca/code/task2_main.py --method aca
 
 # sentence-bert
 python ptm/pretrain_models_sim.py --method sbert
-method optional:["sbert", "simcse-roberta", "e5-large", "bert", "deberta-base", "deberta-v3-large", "gte-large", "bge-large", "e5-large-v2", "sentence-t5-xxl", "simcse-bert"]
+optional methods:["sbert", "simcse-roberta", "e5-large", "bert", "deberta-base", "deberta-v3-large", "gte-large", "bge-large", "e5-large-v2", "sentence-t5-xxl", "simcse-bert"]
 
 # evaluation
 python evaluate.py --method lsi
