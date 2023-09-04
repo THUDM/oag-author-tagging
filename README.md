@@ -28,6 +28,7 @@ pip install -r requirements.txt
 The dataset can be downloaded from [BaiduPan](https://pan.baidu.com/s/1Mjd8KH5hutHu-R6oyBNJSw) (with password bqdt). Put the _raw_data_ directory into project directory.
 
 ## How to run
+
 ```bash
 cd $project_path
 export CUDA_VISIBLE_DEVICES='?'  # specify which GPU(s) to be used
@@ -46,7 +47,8 @@ python aca/code/task2_main.py --method lsi
 python aca/code/task2_main.py --method aca
 
 # sentence-bert
-python ptm/pretrain_models_sim.py
+python ptm/pretrain_models_sim.py --method sbert
+method optional:["sbert", "simcse-roberta", "e5-large", "bert", "deberta-base", "deberta-v3-large", "gte-large", "bge-large", "e5-large-v2", "sentence-t5-xxl", "simcse-bert"]
 
 # evaluation
 python evaluate.py --method lsi
@@ -56,8 +58,9 @@ python evaluate.py --method sbert
 ```
 
 ## Results
+
 |       | Hit@3 |
-|-------|-------|
+| ----- | ----- |
 | LSI   | 24.37 |
 | SBERT | 15.97 |
 | ACA   | 30.32 |
