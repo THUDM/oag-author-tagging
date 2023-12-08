@@ -25,7 +25,7 @@ pip install -r requirements.txt
 
 ### Dataset
 
-The dataset can be downloaded from [BaiduPan](https://pan.baidu.com/s/1Mjd8KH5hutHu-R6oyBNJSw) (with password bqdt). Put the _raw_data_ directory into project directory.
+The dataset can be downloaded from [BaiduPan](https://pan.baidu.com/s/1Mjd8KH5hutHu-R6oyBNJSw) (with password bqdt) or [Aliyun](https://open-data-set.oss-cn-beijing.aliyuncs.com/oag-benchmark/entity-tagging/oag-author-tagging/raw_data.zip). Put the _raw_data_ directory into project directory.
 
 ## How to run
 
